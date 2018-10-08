@@ -1,5 +1,7 @@
 import React, { Component } from "react";
-import { createBottomTabNavigator, createStackNavigator, createSwitchNavigator } from "react-navigation";
+import { createStackNavigator, createSwitchNavigator } from "react-navigation";
+import NavigationService from './services/NavigationService';
+
 
 import TodoListScreen from './screens/TodoListScreen/TodoListScreen';
 import SaveListScreen from './screens/SaveListScreen/SaveListScreen';
@@ -22,17 +24,15 @@ const TodoScreens = createStackNavigator(
 
 export default class App extends Component {
   render() {
-    const RootNavigator = createSwitchNavigator(
-      {
+    const RootNavigator = createSwitchNavigator({
         TodoScreens: TodoScreens
-      },
-      {
+      }, {
         initialRouteName: 'TodoScreens'
       }
     );
 
     return (
-      <RootNavigator />
+      <RootNavigator ref={(nav) => NavigationService.setNavigator(nav)} />
     )
   }
 }

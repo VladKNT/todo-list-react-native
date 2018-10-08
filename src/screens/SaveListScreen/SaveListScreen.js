@@ -1,7 +1,9 @@
 import React from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity } from 'react-native';
+import { View } from 'react-native';
 import { connect } from 'react-redux';
 import { createTodoList, updateTodoList } from '../../actions/ActionCreators';
+import { Button, Input } from '../../components/common';
+import styles from './styles';
 
 class SaveListScreen extends React.Component {
   state = {
@@ -26,32 +28,18 @@ class SaveListScreen extends React.Component {
   render() {
     return (
       <View style={styles.container}>
-        <Text>
-          Title:
-        </Text>
-        <TextInput value={this.state.title} onChangeText={(title) => this.setState({ title })}/>
+        <Input title={'Title'} value={this.state.title} onChangeText={(title) => this.setState({ title })}/>
 
-        <TouchableOpacity onPress={() => this.savePressed()}>
-          <Text>
+        <Button onPress={() => this.savePressed()}>
             Save
-          </Text>
-        </TouchableOpacity>
+        </Button>
       </View>
     );
   }
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-});
-
 const mapStateToProps = (state) => {
-  return {
-
-  }
+  return {}
 };
 
 const mapDispatchToProps = (dispatch) => {

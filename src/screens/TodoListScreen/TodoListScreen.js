@@ -1,31 +1,48 @@
 import React from 'react';
-import { StyleSheet, Text, View, FlatList, TouchableOpacity } from 'react-native';
+import { Text, View, ScrollView, FlatList, TouchableOpacity, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import _ from 'lodash';
 import { connect } from 'react-redux';
-import { getTodoList, deleteTodoList } from '../../actions/ActionCreators';
+import { getTodoList, deleteTodoList, deleteTodoItem } from '../../actions/ActionCreators';
+import COLORS from '../../constants/colors';
+import styles from './styles';
 
 class TodoListScreen extends React.Component {
   async componentDidMount() {
     this.props.getTodoList();
   }
 
-  saveTodoListPressed(params) {
+  saveTodoListPressed = (params) => {
     const { navigate } = this.props.navigation;
     navigate("SaveListScreen", params);
-  }
+  };
 
-  saveItemPressed(params) {
+  saveItemPressed = (params) => {
     const { navigate } = this.props.navigation;
     navigate("SaveItemScreen", params);
-  }
+  };
+
+  renderItemAlert = (item) => {
+    Alert.alert(
+      'Todo item actions',
+      'Would you like to update or delete this item?',
+      [
+        {text: 'Cancel', style: 'cancel'},
+        {text: 'Update', onPress: () => this.saveItemPressed(item)},
+        {text: 'Delete', onPress: () => this.props.deleteTodoItem(item.id)}
+      ],
+      { cancelable: false }
+    )
+  };
 
   renderTodoItems = ({ item }) => {
     return(
-      <TouchableOpacity style={styles.todoItemContainer} onPress={() => this.saveItemPressed(item)}>
-        <Text>
-          { item.content }
-        </Text>
+      <TouchableOpacity style={styles.todoItemContainer} onPress={() => this.renderItemAlert(item)}>
+        <View style={styles.todoItem}>
+          <Text style={[ styles.todoItemText, item.complete ? {textDecorationLine: 'line-through'} : null ]}>
+            { item.content }
+          </Text>
+        </View>
 
       </TouchableOpacity>
     )
@@ -43,11 +60,11 @@ class TodoListScreen extends React.Component {
 
           <View style={styles.todoButtonsContainer}>
             <TouchableOpacity onPress={() => this.props.deleteTodoList(item.id)}>
-              <Icon name={'md-trash'} size={30} color={'#000000'} />
+              <Icon name={'md-trash'} size={25} color={COLORS.TRASH_ICON} />
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => this.saveTodoListPressed(item)}>
-              <Icon name={'md-create'} size={30} color={'#000000'} />
+              <Icon name={'md-create'} size={25} color={COLORS.PENCIL_ICON} />
             </TouchableOpacity>
           </View>
         </View>
@@ -59,7 +76,7 @@ class TodoListScreen extends React.Component {
         />
 
         <TouchableOpacity style={styles.addItemButton} onPress={() => this.saveItemPressed({todoId: item.id})}>
-          <Icon name={'md-add-circle'} size={30} color={'#000000'} />
+          <Icon name={'md-add-circle'} size={25} color={COLORS.BLACK} />
         </TouchableOpacity>
       </View>
     );
@@ -69,61 +86,25 @@ class TodoListScreen extends React.Component {
     const { todoList } = this.props;
 
     return (
-      <View style={styles.container}>
-        <TouchableOpacity onPress={() => this.saveTodoListPressed()}>
-          <Text>
-            Create new Todo list
-          </Text>
-        </TouchableOpacity>
+      <ScrollView style={styles.container}>
+          <View style={styles.creationContainer}>
+            <Text style={styles.createText}>
+              Todo list
+            </Text>
+            <TouchableOpacity onPress={() => this.saveTodoListPressed()}>
+              <Icon name={'md-add-circle'} size={25} color={COLORS.BLACK} />
+            </TouchableOpacity>
+          </View>
 
         <FlatList
           data={todoList}
           renderItem={this.renderTodoList}
           keyExtractor={(todoList) => todoList.id.toString()}
         />
-      </View>
+      </ScrollView>
     );
   }
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  todoContainer: {
-    backgroundColor: '#d5d5d5',
-    borderTopWidth: 1,
-    borderWidth: 1,
-    borderColor: '#000000',
-    margin: 10
-  },
-  titleContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    paddingHorizontal: 20
-  },
-  todoTitle: {
-    color: '#000000',
-    fontSize: 18,
-    fontWeight: 'bold'
-  },
-  addItemButton: {
-    alignSelf: 'center',
-    marginVertical: 10
-  },
-  todoButtonsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between'
-  },
-  todoItemContainer: {
-    paddingHorizontal: 10,
-  },
-  todoItem: {
-
-  }
-});
 
 const mapStateToProps = (state) => {
   return {
@@ -134,7 +115,8 @@ const mapStateToProps = (state) => {
 const mapDispatchToProps = (dispatch) => {
   return {
     getTodoList: () => dispatch(getTodoList()),
-    deleteTodoList: (id) => dispatch(deleteTodoList(id))
+    deleteTodoList: (id) => dispatch(deleteTodoList(id)),
+    deleteTodoItem: (id) => dispatch(deleteTodoItem(id))
   }
 };
 

@@ -11,4 +11,5 @@ export default function* rootSaga() {
 
   yield takeLatest(ACTION.CREATE_TODO_ITEM, todoItemSaga.createTodoItem);
   yield takeLatest(ACTION.UPDATE_TODO_ITEM, todoItemSaga.updateTodoItem);
+  yield takeLatest(ACTION.DELETE_TODO_ITEM, todoItemSaga.deleteTodoItem);
 }

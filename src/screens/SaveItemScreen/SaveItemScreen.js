@@ -1,7 +1,9 @@
 import React from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, Switch } from 'react-native';
+import { Text, View, Switch } from 'react-native';
 import { connect } from 'react-redux';
 import { createTodoItem, updateTodoItem } from '../../actions/ActionCreators';
+import { Button, Input } from '../../components/common';
+import styles from './styles';
 
 class SaveItemScreen extends React.Component {
   state = {
@@ -28,9 +30,9 @@ class SaveItemScreen extends React.Component {
   renderCompleteSwitch = () => {
     if (this.isUpdate()) {
       return (
-        <View>
-          <Text>
-            Complete:
+        <View style={styles.switchContainer}>
+          <Text style={styles.switchTitle}>
+            Complete
           </Text>
           <Switch value={this.state.complete} onValueChange={(value) => this.setState({complete: value})}/>
         </View>
@@ -43,34 +45,20 @@ class SaveItemScreen extends React.Component {
   render() {
     return (
       <View style={styles.container}>
-        <Text>
-          Content:
-        </Text>
-        <TextInput value={this.state.content} onChangeText={(content) => this.setState({ content })}/>
+        <Input title={'Content'} value={this.state.content} onChangeText={(content) => this.setState({ content })}/>
 
         { this.renderCompleteSwitch() }
 
-        <TouchableOpacity onPress={() => this.savePressed()}>
-          <Text>
+        <Button onPress={() => this.savePressed()}>
             Save
-          </Text>
-        </TouchableOpacity>
+        </Button>
       </View>
     );
   }
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-});
-
 const mapStateToProps = (state) => {
-  return {
-
-  }
+  return {}
 };
 
 const mapDispatchToProps = (dispatch) => {

@@ -2,6 +2,7 @@ import { put, call, select } from 'redux-saga/effects';
 import ACTION from '../actions/ActionTypes';
 import TodoService from '../services/TodoService';
 import _ from 'lodash';
+import nav from '../services/NavigationService';
 
 export function* getTodoList(action) {
   try {
@@ -24,6 +25,7 @@ export function* createTodoList(action) {
 
     if (response) {
       yield call(getTodoList);
+      nav.navigator._navigation.goBack();
     }
 
     yield put({ type: ACTION.CREATE_TODO_LIST_SUCCESS });
@@ -41,6 +43,7 @@ export function* updateTodoList(action) {
 
     if (response) {
       yield call(getTodoList);
+      nav.navigator._navigation.goBack();
     }
 
     yield put({ type: ACTION.UPDATE_TODO_LIST_SUCCESS });
