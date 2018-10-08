@@ -49,3 +49,10 @@ export const updateTodoItem = ({ id, content, complete }) => {
     complete
   }
 };
+
+export const deleteTodoItem = (id) => {
+  return {
+    type: ACTION.DELETE_TODO_ITEM,
+    id
+  }
+};
