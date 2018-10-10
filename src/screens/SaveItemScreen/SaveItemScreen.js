@@ -1,7 +1,9 @@
 import React from 'react';
 import { Text, View, Switch } from 'react-native';
-import { connect } from 'react-redux';
-import { createTodoItem, updateTodoItem } from '../../actions/ActionCreators';
+import { Mutation } from 'react-apollo';
+import _ from 'lodash';
+import {getTodoList} from '../../api/TodoApi';
+import { createTodoItem, updateTodoItem } from '../../api/TodoItemApi';
 import { Button, Input } from '../../components/common';
 import styles from './styles';
 
@@ -15,15 +17,15 @@ class SaveItemScreen extends React.Component {
     return this.props.navigation.state.params.content;
   };
 
-  savePressed = () => {
-    const { todoId } = this.props.navigation.state.params;
+  onSavePressed = (saveItem) => {
+    const { params } = this.props.navigation.state;
     const { content, complete } = this.state;
 
     if (this.isUpdate()) {
-      this.props.updateTodoItem({id: this.props.navigation.state.params.id, content, complete});
-    }
-    else {
-      this.props.createTodoItem({ todoId, content });
+      saveItem({ variables: { id: params.id, content, complete } });
+      this.props.navigation.goBack();
+    } else {
+      saveItem({ variables: { todoId: params.todoId, content } });
     }
   };
 
@@ -43,29 +45,43 @@ class SaveItemScreen extends React.Component {
   };
 
   render() {
+    const mutation = this.isUpdate() ? updateTodoItem : createTodoItem;
+
     return (
       <View style={styles.container}>
         <Input title={'Content'} value={this.state.content} onChangeText={(content) => this.setState({ content })}/>
 
         { this.renderCompleteSwitch() }
 
-        <Button onPress={() => this.savePressed()}>
-            Save
-        </Button>
+        <Mutation mutation={mutation}
+          update={!this.isUpdate() ? (cache, { data: { createTodoItem } }) => {
+            const { getAllTodos }  = cache.readQuery({ query: getTodoList });
+
+            _.each(getAllTodos, (todoList) => {
+              if(todoList.id === createTodoItem.todoId) {
+                if (_.isNull(todoList.todoItems)) {
+                  todoList.todoItems = [];
+                }
+                todoList.todoItems.push(createTodoItem);
+              }
+            });
+
+            cache.writeQuery({
+              query: getTodoList,
+              data: { getAllTodos }
+            });
+
+            this.props.navigation.goBack();
+          } : null}>
+          {(saveItem) => (
+            <Button onPress={() => this.onSavePressed(saveItem)}>
+              Save
+            </Button>
+          )}
+        </Mutation>
       </View>
     );
   }
 }
 
-const mapStateToProps = (state) => {
-  return {}
-};
-
-const mapDispatchToProps = (dispatch) => {
-  return {
-    createTodoItem: (title) => dispatch(createTodoItem(title)),
-    updateTodoItem: (params) => dispatch(updateTodoItem(params))
-  }
-};
-
-export default connect(mapStateToProps, mapDispatchToProps)(SaveItemScreen);
+export default (SaveItemScreen);

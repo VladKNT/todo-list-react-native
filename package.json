@@ -3,15 +3,19 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "axios": "^0.18.0",
+    "apollo-cache-inmemory": "^1.2.10",
+    "apollo-client": "^2.4.2",
+    "apollo-link": "^1.2.3",
+    "apollo-link-http": "^1.5.5",
+    "apollo-link-state": "^0.4.2",
+    "graphql": "^14.0.2",
+    "graphql-tag": "^2.10.0",
     "lodash": "^4.17.11",
     "react": "16.3.1",
+    "react-apollo": "^2.2.4",
     "react-native": "~0.55.2",
     "react-native-vector-icons": "^4.6.0",
-    "react-navigation": "^2.17.0",
-    "react-redux": "^5.0.7",
-    "redux": "^4.0.0",
-    "redux-saga": "^0.16.0"
+    "react-navigation": "^2.17.0"
   },
   "devDependencies": {
     "@storybook/addon-actions": "^3.4.11",
@@ -21,8 +25,7 @@
     "jest": "^23.6.0",
     "jest-react-native": "^18.0.0",
     "react-dom": "^16.5.2",
-    "react-test-renderer": "16.3.1",
-    "redux-devtools-extension": "^2.13.5"
+    "react-test-renderer": "16.3.1"
   },
   "scripts": {
     "start": "react-native start",

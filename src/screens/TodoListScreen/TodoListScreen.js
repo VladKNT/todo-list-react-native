@@ -2,16 +2,13 @@ import React from 'react';
 import { Text, View, ScrollView, FlatList, TouchableOpacity, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import _ from 'lodash';
-import { connect } from 'react-redux';
-import { getTodoList, deleteTodoList, deleteTodoItem } from '../../actions/ActionCreators';
+import { Query, Mutation, compose, graphql } from 'react-apollo';
+import { getTodoList, deleteTodoList } from '../../api/TodoApi';
+import { deleteTodoItem } from '../../api/TodoItemApi';
 import COLORS from '../../constants/colors';
 import styles from './styles';
 
 class TodoListScreen extends React.Component {
-  async componentDidMount() {
-    this.props.getTodoList();
-  }
-
   saveTodoListPressed = (params) => {
     const { navigate } = this.props.navigation;
     navigate("SaveListScreen", params);
@@ -22,6 +19,22 @@ class TodoListScreen extends React.Component {
     navigate("SaveItemScreen", params);
   };
 
+  deleteTodoList = async (id) => {
+    try {
+      const response = await this.props.deleteTodoList({ variables: { id }});
+    } catch (error) {
+      console.info(error);
+    }
+  };
+
+  deleteTodoItem = async (id) => {
+    try {
+      const response = await this.props.deleteTodoItem({ variables: { id }});
+    } catch (error) {
+      console.info(error);
+    }
+  };
+
   renderItemAlert = (item) => {
     Alert.alert(
       'Todo item actions',
@@ -29,7 +42,7 @@ class TodoListScreen extends React.Component {
       [
         {text: 'Cancel', style: 'cancel'},
         {text: 'Update', onPress: () => this.saveItemPressed(item)},
-        {text: 'Delete', onPress: () => this.props.deleteTodoItem(item.id)}
+        {text: 'Delete', onPress: () => this.deleteTodoItem(item.id)}
       ],
       { cancelable: false }
     )
@@ -59,7 +72,7 @@ class TodoListScreen extends React.Component {
           </Text>
 
           <View style={styles.todoButtonsContainer}>
-            <TouchableOpacity onPress={() => this.props.deleteTodoList(item.id)}>
+            <TouchableOpacity onPress={() => this.deleteTodoList(item.id)}>
               <Icon name={'md-trash'} size={25} color={COLORS.TRASH_ICON} />
             </TouchableOpacity>
 
@@ -83,41 +96,60 @@ class TodoListScreen extends React.Component {
   };
 
   render() {
-    const { todoList } = this.props;
-
     return (
-      <ScrollView style={styles.container}>
-          <View style={styles.creationContainer}>
-            <Text style={styles.createText}>
-              Todo list
-            </Text>
-            <TouchableOpacity onPress={() => this.saveTodoListPressed()}>
-              <Icon name={'md-add-circle'} size={25} color={COLORS.BLACK} />
-            </TouchableOpacity>
-          </View>
+      <Query query={ getTodoList }>
+        {({ loading, error, data: { getAllTodos } }) => {
+          return (
+            <ScrollView style={styles.container}>
+              <View style={styles.creationContainer}>
+                <Text style={styles.createText}>
+                  Todo list
+                </Text>
+                <TouchableOpacity onPress={() => this.saveTodoListPressed()}>
+                  <Icon name={'md-add-circle'} size={25} color={COLORS.BLACK} />
+                </TouchableOpacity>
+              </View>
 
-        <FlatList
-          data={todoList}
-          renderItem={this.renderTodoList}
-          keyExtractor={(todoList) => todoList.id.toString()}
-        />
-      </ScrollView>
+              <FlatList
+                data={getAllTodos}
+                renderItem={this.renderTodoList}
+                keyExtractor={(todoList) => todoList.id.toString()}
+              />
+            </ScrollView>
+          )
+        }}
+      </Query>
     );
   }
 }
 
-const mapStateToProps = (state) => {
-  return {
-    todoList: state.todoReducer.todoList
-  }
-};
+export default compose(
+  graphql(deleteTodoList, {name: 'deleteTodoList', options: {
+    update: (cache, { data: { deleteTodo } }) => {
+      const { getAllTodos }  = cache.readQuery({ query: getTodoList });
+      const newTodos = _.reject(getAllTodos, { id: deleteTodo });
 
-const mapDispatchToProps = (dispatch) => {
-  return {
-    getTodoList: () => dispatch(getTodoList()),
-    deleteTodoList: (id) => dispatch(deleteTodoList(id)),
-    deleteTodoItem: (id) => dispatch(deleteTodoItem(id))
-  }
-};
+      cache.writeQuery({
+        query: getTodoList,
+        data: { getAllTodos: newTodos}
+      });
+    }
+  }}),
 
-export default connect(mapStateToProps, mapDispatchToProps)(TodoListScreen);
+  graphql(deleteTodoItem, {name: 'deleteTodoItem', options: {
+    update: (cache, { data:  { deleteTodoItem } }) => {
+      const { getAllTodos }  = cache.readQuery({ query: getTodoList });
+
+      _.each(getAllTodos, (todoList) => {
+        if(todoList.id === deleteTodoItem.todoId) {
+          _.remove(todoList.todoItems, { id: deleteTodoItem.id});
+        }
+      });
+
+      cache.writeQuery({
+        query: getTodoList,
+        data: { getAllTodos }
+      });
+    }
+  }})
+)(TodoListScreen);

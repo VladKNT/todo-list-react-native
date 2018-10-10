@@ -1,33 +1,31 @@
-export default class TodoItemApi {
-  static createTodoItem(todoId, content) {
-    return `
-      mutation {
-        createTodoItem(todoId: ${todoId}, content: "${content}") {
-          id
-          content
-          complete 
-        }
-      } 
-   `
-  }
+import gql from 'graphql-tag';
 
-  static updateTodoItem(id, content, complete) {
-    return `
-      mutation {
-        updateTodoItem(id: ${id}, content: "${content}", complete: ${complete}) {
-          id
-          content
-          complete 
-        }
-      } 
-   `
+export const createTodoItem = gql `
+  mutation createTodoItem($todoId: Int!, $content: String!) {
+    createTodoItem(todoId: $todoId, content: $content) {
+      id
+      content
+      complete 
+      todoId
+    }
   }
+`;
 
-  static deleteTodoItem(id) {
-    return `
-      mutation {
-        deleteTodoItem(id: ${id})
-      } 
-   `
+export const updateTodoItem = gql `
+  mutation updateTodoItem($id: Int!, $content: String, $complete: Boolean) {
+    updateTodoItem(id: $id, content: $content, complete: $complete) {
+      id
+      content
+      complete
+    }
   }
-}
+`;
+
+export const deleteTodoItem = gql `
+  mutation deleteTodoItem($id: Int!) {
+    deleteTodoItem(id: $id) {
+      id,
+      todoId
+    }
+  }
+`;
