@@ -42,3 +42,23 @@ export const deleteTodoList = gql `
     deleteTodo(id: $id)
   }
 `;
+
+export const todoListSaved = gql `
+  subscription {
+    todoSaved {
+      id
+      title
+      todoItems {
+        id
+        content
+        complete
+      }
+    }
+  }
+`;
+
+export const todoListDeleted = gql `
+  subscription {
+    todoDeleted 
+  }
+`;

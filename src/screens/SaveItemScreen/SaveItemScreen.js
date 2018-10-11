@@ -1,8 +1,6 @@
 import React from 'react';
 import { Text, View, Switch } from 'react-native';
 import { Mutation } from 'react-apollo';
-import _ from 'lodash';
-import {getTodoList} from '../../api/TodoApi';
 import { createTodoItem, updateTodoItem } from '../../api/TodoItemApi';
 import { Button, Input } from '../../components/common';
 import styles from './styles';
@@ -23,10 +21,10 @@ class SaveItemScreen extends React.Component {
 
     if (this.isUpdate()) {
       saveItem({ variables: { id: params.id, content, complete } });
-      this.props.navigation.goBack();
     } else {
       saveItem({ variables: { todoId: params.todoId, content } });
     }
+    this.props.navigation.goBack();
   };
 
   renderCompleteSwitch = () => {
@@ -53,26 +51,7 @@ class SaveItemScreen extends React.Component {
 
         { this.renderCompleteSwitch() }
 
-        <Mutation mutation={mutation}
-          update={!this.isUpdate() ? (cache, { data: { createTodoItem } }) => {
-            const { getAllTodos }  = cache.readQuery({ query: getTodoList });
-
-            _.each(getAllTodos, (todoList) => {
-              if(todoList.id === createTodoItem.todoId) {
-                if (_.isNull(todoList.todoItems)) {
-                  todoList.todoItems = [];
-                }
-                todoList.todoItems.push(createTodoItem);
-              }
-            });
-
-            cache.writeQuery({
-              query: getTodoList,
-              data: { getAllTodos }
-            });
-
-            this.props.navigation.goBack();
-          } : null}>
+        <Mutation mutation={mutation}>
           {(saveItem) => (
             <Button onPress={() => this.onSavePressed(saveItem)}>
               Save

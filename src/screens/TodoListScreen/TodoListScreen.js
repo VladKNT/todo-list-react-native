@@ -2,13 +2,106 @@ import React from 'react';
 import { Text, View, ScrollView, FlatList, TouchableOpacity, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import _ from 'lodash';
-import { Query, Mutation, compose, graphql } from 'react-apollo';
-import { getTodoList, deleteTodoList } from '../../api/TodoApi';
-import { deleteTodoItem } from '../../api/TodoItemApi';
+import { Query, compose, graphql } from 'react-apollo';
+import { getTodoList, deleteTodoList, todoListSaved, todoListDeleted } from '../../api/TodoApi';
+import { deleteTodoItem, todoItemSaved, todoItemDeleted } from '../../api/TodoItemApi';
 import COLORS from '../../constants/colors';
 import styles from './styles';
 
 class TodoListScreen extends React.Component {
+  subscribe = () => {
+    this.subscribeToMore({
+      document: todoListSaved,
+      updateQuery: (prev, { subscriptionData }) => {
+        if (!subscriptionData.data) return prev;
+
+        const { todoSaved } = subscriptionData.data;
+        const { getAllTodos } = prev;
+        const newTodosList = _.reject(getAllTodos, {id: todoSaved.id});
+
+        return {
+          getAllTodos: [
+            ...newTodosList,
+            todoSaved,
+          ],
+        };
+      }
+    });
+
+    this.subscribeToMore({
+      document: todoListDeleted,
+      updateQuery: (prev, { subscriptionData }) => {
+        if (!subscriptionData.data) return prev;
+
+        const { todoDeleted } = subscriptionData.data;
+        const { getAllTodos } = prev;
+        const newTodosList = _.reject(getAllTodos, { id: todoDeleted });
+
+        return {
+          getAllTodos: newTodosList
+        }
+      }
+    });
+
+    this.subscribeToMore({
+      document: todoItemSaved,
+      updateQuery: (prev, { subscriptionData }) => {
+        if (!subscriptionData.data) return prev;
+
+        const { todoItemSaved } = subscriptionData.data;
+        const { getAllTodos } = prev;
+
+        _.each(getAllTodos, (todoList) => {
+          if(todoList.id === todoItemSaved.todoId) {
+            if (_.isNull(todoList.todoItems)) {
+              todoList.todoItems = [];
+            }
+             _.remove(todoList.todoItems, { id: todoItemSaved.id });
+
+            todoList.todoItems.push(todoItemSaved);
+          }
+        });
+
+        return { getAllTodos };
+      }
+    });
+
+    this.subscribeToMore({
+      document: todoItemDeleted,
+      updateQuery: (prev, { subscriptionData }) => {
+        if (!subscriptionData.data) return prev;
+        
+        const { todoItemDeleted } = subscriptionData.data;
+        const { getAllTodos } = prev;
+
+        const newTodosList = _.each(getAllTodos, (todoList) => {
+          if(todoList.id === todoItemDeleted.todoId) {
+            let newList = todoList;
+            const newTodosList = _.reject(getAllTodos, {id: todoList.id});
+            newList.todoItems = _.reject(todoList.todoItems, { id: todoItemDeleted.id});
+
+            return {
+              getAllTodos: [
+                ...newTodosList,
+                newList
+              ]
+            }
+          }
+        });
+
+        this.forceUpdate();
+
+        return {
+          getAllTodos: newTodosList
+        }
+      }
+    });
+  };
+
+  componentDidMount() {
+    this.subscribe();
+  }
+
   saveTodoListPressed = (params) => {
     const { navigate } = this.props.navigation;
     navigate("SaveListScreen", params);
@@ -98,7 +191,29 @@ class TodoListScreen extends React.Component {
   render() {
     return (
       <Query query={ getTodoList }>
-        {({ loading, error, data: { getAllTodos } }) => {
+        {({ loading, error, data, subscribeToMore }) => {
+          this.subscribeToMore = subscribeToMore;
+
+          if(loading) {
+            return (
+              <View style={styles.container}>
+                <Text>
+                  Loading...
+                </Text>
+              </View>
+            )
+          }
+
+          if (error) {
+            return (
+              <View style={styles.container}>
+                <Text>
+                  Problem with connection
+                </Text>
+              </View>
+            )
+          }
+
           return (
             <ScrollView style={styles.container}>
               <View style={styles.creationContainer}>
@@ -111,7 +226,7 @@ class TodoListScreen extends React.Component {
               </View>
 
               <FlatList
-                data={getAllTodos}
+                data={data.getAllTodos}
                 renderItem={this.renderTodoList}
                 keyExtractor={(todoList) => todoList.id.toString()}
               />
@@ -124,32 +239,6 @@ class TodoListScreen extends React.Component {
 }
 
 export default compose(
-  graphql(deleteTodoList, {name: 'deleteTodoList', options: {
-    update: (cache, { data: { deleteTodo } }) => {
-      const { getAllTodos }  = cache.readQuery({ query: getTodoList });
-      const newTodos = _.reject(getAllTodos, { id: deleteTodo });
-
-      cache.writeQuery({
-        query: getTodoList,
-        data: { getAllTodos: newTodos}
-      });
-    }
-  }}),
-
-  graphql(deleteTodoItem, {name: 'deleteTodoItem', options: {
-    update: (cache, { data:  { deleteTodoItem } }) => {
-      const { getAllTodos }  = cache.readQuery({ query: getTodoList });
-
-      _.each(getAllTodos, (todoList) => {
-        if(todoList.id === deleteTodoItem.todoId) {
-          _.remove(todoList.todoItems, { id: deleteTodoItem.id});
-        }
-      });
-
-      cache.writeQuery({
-        query: getTodoList,
-        data: { getAllTodos }
-      });
-    }
-  }})
+  graphql(deleteTodoList, { name: 'deleteTodoList' }),
+  graphql(deleteTodoItem, { name: 'deleteTodoItem' })
 )(TodoListScreen);

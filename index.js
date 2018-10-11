@@ -3,7 +3,9 @@ import React, { Component } from 'react';
 import { ApolloClient} from 'apollo-client'
 import { InMemoryCache } from 'apollo-cache-inmemory'
 import { HttpLink } from 'apollo-link-http'
-import { ApolloLink } from 'apollo-link'
+import { getMainDefinition } from 'apollo-utilities';
+import { WebSocketLink } from 'apollo-link-ws';
+import { ApolloLink, split } from 'apollo-link'
 import { ApolloProvider } from 'react-apollo'
 import { withClientState } from 'apollo-link-state'
 
@@ -24,11 +26,31 @@ class Todo extends Component {
       cache
     });
 
+    const httpLink = new HttpLink({ uri: URLS.API_URL });
+
+    const wsLink = new WebSocketLink({
+      uri: URLS.WS_URL,
+      options: {
+        reconnect: true,
+      },
+    });
+
+    const terminatingLink = split(
+      ({ query }) => {
+        const { kind, operation } = getMainDefinition(query);
+        return (
+          kind === 'OperationDefinition' && operation === 'subscription'
+        );
+      },
+      wsLink,
+      httpLink,
+    );
+
     const client = new ApolloClient({
       cache,
       link: ApolloLink.from([
         stateLink,
-        new HttpLink({ uri: URLS.API_URL })
+        terminatingLink
       ])
     });
 

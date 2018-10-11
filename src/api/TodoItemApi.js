@@ -17,6 +17,7 @@ export const updateTodoItem = gql `
       id
       content
       complete
+      todoId
     }
   }
 `;
@@ -24,7 +25,26 @@ export const updateTodoItem = gql `
 export const deleteTodoItem = gql `
   mutation deleteTodoItem($id: Int!) {
     deleteTodoItem(id: $id) {
-      id,
+      id
+      todoId
+    }
+  }
+`;
+
+export const todoItemSaved = gql `
+  subscription {
+    todoItemSaved {
+      id
+      content
+      complete
+      todoId
+    }
+  }
+`;
+export const todoItemDeleted = gql `
+  subscription {
+    todoItemDeleted {
+      id
       todoId
     }
   }
